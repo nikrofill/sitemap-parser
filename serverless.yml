@@ -1,0 +1,73 @@
+org: maxpain
+app: staging
+service: sitemap-parser
+configValidationMode: error
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: us-east-1
+  memorySize: 1024
+  timeout: 450
+  tags:
+    VantaNonProd: True
+    VantaOwner: m.dudko@electroneek.com
+  environment:
+    SITEMAP_URI: ${param:SITEMAP_URI}
+    DB_URI: ${param:DB_URI}
+    DB_NAME: ${param:DB_NAME}
+    WEBHOOK_URI: ${param:WEBHOOK_URI}
+
+plugins:
+  - serverless-python-requirements
+
+package:
+  patterns:
+    - '*.py'
+
+custom:
+  pythonRequirements:
+    fileName: requirements.txt
+    usePipenv: True
+    layer: true
+
+functions:
+  sitemap:
+    handler: parser.create_sitemap
+    memorySize: 1024
+    timeout: 450
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    events:
+      - schedule:
+          rate: rate(30 minutes)
+          enabled: true
+    vpc:
+      securityGroupIds:
+        - sg-06efbb8e0a2fb02e9
+      subnetIds:
+        - subnet-0965ee015da0bcc01
+        - subnet-0ce72e167e4c2cf3e
+  reporter:
+    handler: reporter.reporter
+    memorySize: 1024
+    timeout: 450
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
+    events:
+      - schedule:
+          rate: cron(00 16 * * ? *)
+          enabled: true
+      - schedule:
+          rate: cron(00 20 19 1 ? 2024)
+          enabled: true
+    vpc:
+      securityGroupIds:
+        - sg-06efbb8e0a2fb02e9
+      subnetIds:
+        - subnet-0965ee015da0bcc01
+        - subnet-0ce72e167e4c2cf3e
+
+    

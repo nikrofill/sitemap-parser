@@ -1,0 +1,7 @@
+requests
+bs4
+lxml
+datetime
+pymongo
+python-dotenv
+PyYAML
